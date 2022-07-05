@@ -29,6 +29,7 @@ pub enum ImageInput {
         size: (u32, u32),
     },
     Filename(String),
+    Bytes(Vec<u8>),
 }
 
 impl ImageInput {
@@ -39,6 +40,9 @@ impl ImageInput {
                 Ok(DynamicImage::ImageRgb8(fill_color([r, g, b], size)))
             }
             Self::Filename(name) => load_image_from_file(&name),
+            Self::Bytes(bytes) => Ok(Reader::new(Cursor::new(bytes))
+                .with_guessed_format()?
+                .decode()?),
         }
     }
 }
@@ -52,6 +56,7 @@ pub enum FontInput {
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Font(Font<'static>),
     Filename(String),
+    Bytes(Vec<u8>),
 }
 
 impl FontInput {
@@ -59,6 +64,7 @@ impl FontInput {
         match self {
             Self::Font(font) => Ok(font),
             Self::Filename(name) => load_font_from_file(&name),
+            Self::Bytes(bytes) => Font::try_from_vec(bytes).ok_or(Errors::InvalidFont),
         }
     }
 }
