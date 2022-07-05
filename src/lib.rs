@@ -53,20 +53,26 @@ impl FontInput {
 
 #[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
 pub struct ImageOperator {
-    pub image_input: ImageInput,
+    pub image_input: Option<ImageInput>,
     pub operations: Vec<ImageOperation>,
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     image: Option<DynamicImage>,
 }
 
 impl ImageOperator {
-    pub fn apply_all_operations(mut self) -> Result<(), Errors> {
-        let mut image = self.image_input.get_image()?;
+    pub fn new(image_input: ImageInput, operations: Vec<ImageOperation>) -> Self{
+        Self { image_input: Some(image_input), operations, image: None }
+    }
+
+    pub fn apply_all_operations(self) -> Result<Self, Errors> {
+        let mut image = self.image_input.ok_or(Errors::InputImageAlreadyUsed)?.get_image()?;
         for op in self.operations.into_iter() {
             image = op.apply(image)?;
         }
-        self.image = Some(image);
-        Ok(())
+        Ok(Self{image_input: None, operations:Vec::new(), image: Some(image)})
+    }
+    pub fn get_image(self)->Option<DynamicImage>{
+        self.image
     }
 }
 

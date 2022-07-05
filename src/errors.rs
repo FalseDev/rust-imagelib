@@ -2,6 +2,7 @@
 pub enum Errors {
     IOError(std::io::Error),
     ImageError(image::ImageError),
+    InputImageAlreadyUsed,
 }
 
 impl From<image::ImageError> for Errors {
