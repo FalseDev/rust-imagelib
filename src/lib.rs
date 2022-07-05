@@ -1,12 +1,12 @@
 use std::{fs, io::Cursor};
 
 use conv::ValueInto;
-use image::{
+pub use image::{
     imageops, io::Reader, DynamicImage, GenericImage, GenericImageView, ImageOutputFormat, Pixel,
     Rgb, RgbImage, Rgba,
 };
-use imageproc::{definitions::Clamp, drawing::draw_text_mut};
-use rusttype::{point, Font, Scale};
+pub use imageproc::{definitions::Clamp, drawing::draw_text_mut};
+pub use rusttype::{point, Font, Scale};
 
 pub mod errors;
 #[cfg(feature = "serde")]
@@ -14,7 +14,11 @@ use serde::Deserialize;
 
 use crate::errors::Errors;
 
-#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub enum ImageInput {
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     DynamicImage(DynamicImage),
@@ -24,6 +28,7 @@ pub enum ImageInput {
         b: u8,
         size: (u32, u32),
     },
+    Filename(String),
 }
 
 impl ImageInput {
@@ -33,25 +38,36 @@ impl ImageInput {
             Self::Color { r, g, b, size } => {
                 Ok(DynamicImage::ImageRgb8(fill_color([r, g, b], size)))
             }
+            Self::Filename(name) => load_image_from_file(&name),
         }
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub enum FontInput {
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Font(Font<'static>),
+    Filename(String),
 }
 
 impl FontInput {
     pub fn get_font(self) -> Result<Font<'static>, Errors> {
         match self {
             Self::Font(font) => Ok(font),
+            Self::Filename(name) => load_font_from_file(&name),
         }
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub struct ImageOperator {
     pub image_input: Option<ImageInput>,
     pub operations: Vec<ImageOperation>,
@@ -60,23 +76,38 @@ pub struct ImageOperator {
 }
 
 impl ImageOperator {
-    pub fn new(image_input: ImageInput, operations: Vec<ImageOperation>) -> Self{
-        Self { image_input: Some(image_input), operations, image: None }
+    pub fn new(image_input: ImageInput, operations: Vec<ImageOperation>) -> Self {
+        Self {
+            image_input: Some(image_input),
+            operations,
+            image: None,
+        }
     }
 
     pub fn apply_all_operations(self) -> Result<Self, Errors> {
-        let mut image = self.image_input.ok_or(Errors::InputImageAlreadyUsed)?.get_image()?;
+        let mut image = self
+            .image_input
+            .ok_or(Errors::InputImageAlreadyUsed)?
+            .get_image()?;
         for op in self.operations.into_iter() {
             image = op.apply(image)?;
         }
-        Ok(Self{image_input: None, operations:Vec::new(), image: Some(image)})
+        Ok(Self {
+            image_input: None,
+            operations: Vec::new(),
+            image: Some(image),
+        })
     }
-    pub fn get_image(self)->Option<DynamicImage>{
+    pub fn get_image(self) -> Option<DynamicImage> {
         self.image
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub struct ScaleTuple(pub f32, pub f32);
 impl ScaleTuple {
     fn to_scale(&self) -> Scale {
@@ -87,7 +118,11 @@ impl ScaleTuple {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub enum ImageOperation {
     Overlay {
         layer_image_input: ImageInput,
