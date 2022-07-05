@@ -9,41 +9,97 @@ use imageproc::{definitions::Clamp, drawing::draw_text_mut};
 use rusttype::{point, Font, Scale};
 
 pub mod errors;
+#[cfg(feature = "serde")]
+use serde::Deserialize;
+
 use crate::errors::Errors;
 
-pub struct ImageOperator {
-    pub image: DynamicImage,
-    pub operations: Vec<ImageOperation>,
+#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+pub enum ImageInput {
+    #[cfg_attr(feature = "serde", serde(skip_deserializing))]
+    DynamicImage(DynamicImage),
+    Color {
+        r: u8,
+        g: u8,
+        b: u8,
+        size: (u32, u32),
+    },
 }
 
-impl ImageOperator {
-    pub fn apply_all_operations(self) -> Result<DynamicImage, Errors> {
-        let mut image = self.image;
-        for op in self.operations.into_iter() {
-            image = op.apply(image)?;
+impl ImageInput {
+    pub fn get_image(self) -> Result<DynamicImage, Errors> {
+        match self {
+            Self::DynamicImage(image) => Ok(image),
+            Self::Color { r, g, b, size } => {
+                Ok(DynamicImage::ImageRgb8(fill_color([r, g, b], size)))
+            }
         }
-        Ok(image)
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+pub enum FontInput {
+    #[cfg_attr(feature = "serde", serde(skip_deserializing))]
+    Font(Font<'static>),
+}
+
+impl FontInput {
+    pub fn get_font(self) -> Result<Font<'static>, Errors> {
+        match self {
+            Self::Font(font) => Ok(font),
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+pub struct ImageOperator {
+    pub image_input: ImageInput,
+    pub operations: Vec<ImageOperation>,
+    #[cfg_attr(feature = "serde", serde(skip_deserializing))]
+    image: Option<DynamicImage>,
+}
+
+impl ImageOperator {
+    pub fn apply_all_operations(mut self) -> Result<(), Errors> {
+        let mut image = self.image_input.get_image()?;
+        for op in self.operations.into_iter() {
+            image = op.apply(image)?;
+        }
+        self.image = Some(image);
+        Ok(())
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
+pub struct ScaleTuple(pub f32, pub f32);
+impl ScaleTuple {
+    fn to_scale(&self) -> Scale {
+        Scale {
+            x: self.0,
+            y: self.1,
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Deserialize), serde(rename_all = "lowercase"))]
 pub enum ImageOperation {
     Overlay {
-        layer_image: DynamicImage,
+        layer_image_input: ImageInput,
         coords: (i64, i64),
     },
     DrawWrappedText {
         text: String,
         color: [u8; 4],
-        font: Font<'static>,
-        scale: Scale,
+        font: FontInput,
+        scale: ScaleTuple,
         mid: (i32, i32),
         max_width: usize,
     },
     DrawText {
         text: String,
         color: [u8; 4],
-        font: Font<'static>,
-        scale: Scale,
+        font: FontInput,
+        scale: ScaleTuple,
         mid: (i32, i32),
     },
     FlipHorizontal,
@@ -62,10 +118,15 @@ impl ImageOperation {
     fn apply(self, mut image: DynamicImage) -> Result<DynamicImage, Errors> {
         match self {
             Self::Overlay {
-                layer_image,
+                layer_image_input,
                 coords,
             } => {
-                imageops::overlay(&mut image, &layer_image, coords.0, coords.1);
+                imageops::overlay(
+                    &mut image,
+                    &layer_image_input.get_image()?,
+                    coords.0,
+                    coords.1,
+                );
                 Ok(image)
             }
             Self::DrawWrappedText {
@@ -86,7 +147,14 @@ impl ImageOperation {
                 } else {
                     final_text = &text;
                 }
-                draw_text(&mut image, color, &font, final_text, scale, &mid);
+                draw_text(
+                    &mut image,
+                    color,
+                    &font.get_font()?,
+                    final_text,
+                    scale.to_scale(),
+                    &mid,
+                );
                 Ok(image)
             }
             Self::DrawText {
@@ -97,7 +165,14 @@ impl ImageOperation {
                 mid,
             } => {
                 let color = Rgba(color);
-                draw_text(&mut image, color, &font, &text, scale, &mid);
+                draw_text(
+                    &mut image,
+                    color,
+                    &font.get_font()?,
+                    &text,
+                    scale.to_scale(),
+                    &mid,
+                );
                 Ok(image)
             }
             Self::ColorBlend { r, g, b } => {
@@ -141,11 +216,11 @@ pub fn load_font_from_file(name: &str) -> Result<Font<'static>, Errors> {
     Ok(font)
 }
 
-pub fn fill_color(color: [u8; 3], size: u32) -> RgbImage {
-    let mut img = RgbImage::new(size, size);
+pub fn fill_color(color: [u8; 3], size: (u32, u32)) -> RgbImage {
+    let mut img = RgbImage::new(size.0, size.1);
 
-    for x in 0..size {
-        for y in 0..size {
+    for x in 0..size.0 {
+        for y in 0..size.1 {
             img.put_pixel(x, y, Rgb(color));
         }
     }
