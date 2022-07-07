@@ -327,13 +327,11 @@ pub fn draw_text<'a, C>(
 }
 
 pub fn measure_line_width(font: &Font, text: &str, scale: Scale) -> f32 {
-    let width = font
+    font
         .layout(text, scale, point(0.0, 0.0))
         .map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
         .last()
-        .unwrap_or(0.0);
-
-    width
+        .unwrap_or(0.0)
 }
 
 pub fn image_to_bytes(image: DynamicImage, format: ImageOutputFormat) -> Result<Vec<u8>, Errors> {
