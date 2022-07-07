@@ -136,6 +136,12 @@ pub enum ImageOperation {
         w: u32,
         filter: &'static str,
     },
+    Crop {
+        x: u32,
+        y: u32,
+        w: u32,
+        h: u32,
+    },
     Overlay {
         layer_image_input: ImageInput,
         coords: (i64, i64),
@@ -182,6 +188,7 @@ impl ImageOperation {
                     _ => Err(Errors::InvalidResizeFilter),
                 }?,
             )),
+            Self::Crop { x, y, w, h } => Ok(image.crop_imm(x, y, w, h)),
             Self::Overlay {
                 layer_image_input,
                 coords,
