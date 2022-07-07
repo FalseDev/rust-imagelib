@@ -20,7 +20,29 @@ use crate::errors::Errors;
     derive(Deserialize),
     serde(rename_all = "lowercase")
 )]
-pub enum ImageInput {
+pub struct ImageInput {
+    #[cfg_attr(feature = "serde", serde(flatten))]
+    pub image_input_type: ImageInputType,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub operations: Vec<ImageOperation>,
+}
+
+impl ImageInput {
+    pub fn get_image(self) -> Result<DynamicImage, Errors> {
+        let mut image = self.image_input_type.get_image()?;
+        for operation in self.operations.into_iter() {
+            image = operation.apply(image)?;
+        }
+        Ok(image)
+    }
+}
+    
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize),
+    serde(rename_all = "lowercase")
+)]
+pub enum ImageInputType {
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     DynamicImage(DynamicImage),
     Color {
@@ -33,7 +55,7 @@ pub enum ImageInput {
     Bytes(Vec<u8>),
 }
 
-impl ImageInput {
+impl ImageInputType {
     pub fn get_image(self) -> Result<DynamicImage, Errors> {
         match self {
             Self::DynamicImage(image) => Ok(image),
@@ -134,7 +156,7 @@ pub enum ImageOperation {
     Resize {
         h: u32,
         w: u32,
-        filter: &'static str,
+        filter: String,
     },
     Crop {
         x: u32,
@@ -179,7 +201,7 @@ impl ImageOperation {
             Self::Resize { h, w, filter } => Ok(image.resize(
                 w,
                 h,
-                match filter {
+                match filter.as_str() {
                     "Nearest" => Ok(FilterType::Nearest),
                     "Triangle" => Ok(FilterType::Triangle),
                     "CatmullRom" => Ok(FilterType::CatmullRom),
