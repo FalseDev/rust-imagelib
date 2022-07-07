@@ -277,8 +277,7 @@ pub fn load_image_from_file(name: &str) -> Result<DynamicImage, Errors> {
 }
 
 pub fn load_font_from_file(name: &str) -> Result<Font<'static>, Errors> {
-    let font = Font::try_from_vec(fs::read(name)?.to_vec()).expect("Invalid font");
-    Ok(font)
+    Font::try_from_vec(fs::read(name)?.to_vec()).ok_or(Errors::InvalidFont)
 }
 
 pub fn fill_color(color: [u8; 3], size: (u32, u32)) -> RgbImage {
@@ -327,8 +326,7 @@ pub fn draw_text<'a, C>(
 }
 
 pub fn measure_line_width(font: &Font, text: &str, scale: Scale) -> f32 {
-    font
-        .layout(text, scale, point(0.0, 0.0))
+    font.layout(text, scale, point(0.0, 0.0))
         .map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
         .last()
         .unwrap_or(0.0)
