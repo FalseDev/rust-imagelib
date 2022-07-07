@@ -1,6 +1,7 @@
 use std::{fs, io::Cursor};
 
 use conv::ValueInto;
+use image::imageops::FilterType;
 pub use image::{
     imageops, io::Reader, DynamicImage, GenericImage, GenericImageView, ImageOutputFormat, Pixel,
     Rgb, RgbImage, Rgba,
@@ -130,6 +131,11 @@ impl ScaleTuple {
     serde(rename_all = "lowercase")
 )]
 pub enum ImageOperation {
+    Resize {
+        h: u32,
+        w: u32,
+        filter: &'static str,
+    },
     Overlay {
         layer_image_input: ImageInput,
         coords: (i64, i64),
@@ -164,6 +170,18 @@ pub enum ImageOperation {
 impl ImageOperation {
     fn apply(self, mut image: DynamicImage) -> Result<DynamicImage, Errors> {
         match self {
+            Self::Resize { h, w, filter } => Ok(image.resize(
+                w,
+                h,
+                match filter {
+                    "Nearest" => Ok(FilterType::Nearest),
+                    "Triangle" => Ok(FilterType::Triangle),
+                    "CatmullRom" => Ok(FilterType::CatmullRom),
+                    "Gaussian" => Ok(FilterType::Gaussian),
+                    "Lanczos3" => Ok(FilterType::Lanczos3),
+                    _ => Err(Errors::InvalidResizeFilter),
+                }?,
+            )),
             Self::Overlay {
                 layer_image_input,
                 coords,

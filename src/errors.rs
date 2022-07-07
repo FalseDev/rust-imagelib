@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub enum Errors {
     InvalidFont,
+    InvalidResizeFilter,
     InputImageAlreadyUsed,
     IOError(std::io::Error),
     ImageError(image::ImageError),
