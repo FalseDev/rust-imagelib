@@ -36,7 +36,7 @@ impl ImageInput {
         Ok(image)
     }
 }
-    
+
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
@@ -193,6 +193,9 @@ pub enum ImageOperation {
         g: u8,
         b: u8,
     },
+    Rotate90,
+    Rotate180,
+    Rotate270,
 }
 
 impl ImageOperation {
@@ -289,6 +292,9 @@ impl ImageOperation {
             Self::FlipHorizontal => Ok(image.fliph()),
             Self::FlipVertical => Ok(image.flipv()),
             Self::Blur { sigma } => Ok(image.blur(sigma)),
+            Self::Rotate90 => Ok(image.rotate90()),
+            Self::Rotate180 => Ok(image.rotate180()),
+            Self::Rotate270 => Ok(image.rotate270()),
         }
     }
 }
