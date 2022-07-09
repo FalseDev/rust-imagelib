@@ -197,6 +197,9 @@ pub enum ImageOperation {
         layer_image_input: ImageInput,
         coords: (i64, i64),
     },
+    Tile {
+        tile_image: ImageInput,
+    },
     DrawWrappedText {
         text: String,
         color: [u8; 4],
@@ -253,6 +256,10 @@ impl ImageOperation {
                     coords.0,
                     coords.1,
                 );
+                Ok(image)
+            }
+            Self::Tile { tile_image } => {
+                image::imageops::tile(&mut image, &tile_image.get_image()?);
                 Ok(image)
             }
             Self::DrawWrappedText {
