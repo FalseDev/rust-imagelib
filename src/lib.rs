@@ -223,6 +223,10 @@ pub enum ImageOperation {
     Blur {
         sigma: f32,
     },
+    Unsharpen {
+        sigma: f32,
+        threshold: i32,
+    },
     Invert,
     FlipHorizontal,
     FlipVertical,
@@ -325,11 +329,14 @@ impl ImageOperation {
                 });
                 Ok(image)
             }
+            Self::Blur { sigma } => Ok(image.blur(sigma)),
+            Self::Unsharpen { sigma, threshold } => {
+                Ok(image::imageops::unsharpen(&image, sigma, threshold).into())
+            }
             Self::Invert => {
                 image.invert();
                 Ok(image)
             }
-            Self::Blur { sigma } => Ok(image.blur(sigma)),
             Self::FlipHorizontal => Ok(image.fliph()),
             Self::FlipVertical => Ok(image.flipv()),
             Self::Rotate90 => Ok(image.rotate90()),
