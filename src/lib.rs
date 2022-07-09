@@ -228,6 +228,7 @@ pub enum ImageOperation {
         threshold: i32,
     },
     Invert,
+    Grayscale,
     FlipHorizontal,
     FlipVertical,
     Rotate90,
@@ -337,6 +338,7 @@ impl ImageOperation {
                 image.invert();
                 Ok(image)
             }
+            Self::Grayscale => Ok(image::imageops::grayscale(&image).into()),
             Self::FlipHorizontal => Ok(image.fliph()),
             Self::FlipVertical => Ok(image.flipv()),
             Self::Rotate90 => Ok(image.rotate90()),
