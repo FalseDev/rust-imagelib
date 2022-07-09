@@ -215,16 +215,17 @@ pub enum ImageOperation {
         scale: ScaleTuple,
         mid: (i32, i32),
     },
-    FlipHorizontal,
-    FlipVertical,
-    Blur {
-        sigma: f32,
-    },
     ColorBlend {
         r: u8,
         g: u8,
         b: u8,
     },
+    Blur {
+        sigma: f32,
+    },
+    Invert,
+    FlipHorizontal,
+    FlipVertical,
     Rotate90,
     Rotate180,
     Rotate270,
@@ -310,7 +311,6 @@ impl ImageOperation {
             }
             Self::ColorBlend { r, g, b } => {
                 let color = [r, g, b];
-                // let color = Rgba([r, g, b, a]);
                 let h = image.height();
                 let w = image.width();
 
@@ -325,9 +325,13 @@ impl ImageOperation {
                 });
                 Ok(image)
             }
+            Self::Invert => {
+                image.invert();
+                Ok(image)
+            }
+            Self::Blur { sigma } => Ok(image.blur(sigma)),
             Self::FlipHorizontal => Ok(image.fliph()),
             Self::FlipVertical => Ok(image.flipv()),
-            Self::Blur { sigma } => Ok(image.blur(sigma)),
             Self::Rotate90 => Ok(image.rotate90()),
             Self::Rotate180 => Ok(image.rotate180()),
             Self::Rotate270 => Ok(image.rotate270()),
