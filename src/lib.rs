@@ -36,7 +36,7 @@ impl ImageInput {
         Ok(image)
     }
 }
-    
+
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
@@ -53,6 +53,24 @@ pub enum ImageInputType {
     },
     Filename(String),
     Bytes(Vec<u8>),
+    New {
+        h: u32,
+        w: u32,
+        type_: String,
+    },
+}
+
+macro_rules! new_image{
+    ( $type_: ident, $h:ident, $w:ident, $( $x:ident ),* ) => {
+        {
+            match $type_.as_str() {
+                $(
+                    stringify!($x) => Ok(image::$x::new($w, $h).into()),
+                )*
+                _ => Err(Errors::InvalidImageType)
+            }
+        }
+    };
 }
 
 impl ImageInputType {
@@ -66,6 +84,17 @@ impl ImageInputType {
             Self::Bytes(bytes) => Ok(Reader::new(Cursor::new(bytes))
                 .with_guessed_format()?
                 .decode()?),
+            Self::New { h, w, type_ } => new_image!(
+                type_,
+                h,
+                w,
+                RgbImage,
+                RgbaImage,
+                GrayImage,
+                GrayAlphaImage,
+                Rgb32FImage,
+                Rgba32FImage
+            ),
         }
     }
 }
