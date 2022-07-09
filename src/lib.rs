@@ -8,10 +8,11 @@ pub use image::{
 };
 pub use imageproc::{definitions::Clamp, drawing::draw_text_mut};
 pub use rusttype::{point, Font, Scale};
-
-pub mod errors;
 #[cfg(feature = "serde")]
 use serde::Deserialize;
+
+pub mod build_info;
+pub mod errors;
 
 use crate::errors::Errors;
 
