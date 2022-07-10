@@ -183,6 +183,14 @@ impl ScaleTuple {
     serde(rename_all = "lowercase")
 )]
 pub enum ImageOperation {
+    Thumbnail {
+        w: u32,
+        h: u32,
+    },
+    ThumbnailExact {
+        w: u32,
+        h: u32,
+    },
     Resize {
         h: u32,
         w: u32,
@@ -253,6 +261,8 @@ pub enum ImageOperation {
 impl ImageOperation {
     fn apply(self, mut image: DynamicImage) -> Result<DynamicImage, Errors> {
         match self {
+            Self::Thumbnail { h, w } => Ok(image.thumbnail(w, h)),
+            Self::ThumbnailExact { h, w } => Ok(image.thumbnail_exact(w, h)),
             Self::Resize { h, w, filter } => Ok(image.resize(w, h, filter_from_str(filter)?)),
             Self::ResizeExact { h, w, filter } => {
                 Ok(image.resize_exact(w, h, filter_from_str(filter)?))
