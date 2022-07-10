@@ -228,6 +228,9 @@ pub enum ImageOperation {
         sigma: f32,
         threshold: i32,
     },
+    Brighten(i32),
+    AdjustContrast(f32),
+    HueRotate(i32),
     Invert,
     Grayscale,
     FlipHorizontal,
@@ -335,6 +338,9 @@ impl ImageOperation {
             Self::Unsharpen { sigma, threshold } => {
                 Ok(image::imageops::unsharpen(&image, sigma, threshold).into())
             }
+            Self::Brighten(value) => Ok(image.brighten(value)),
+            Self::AdjustContrast(value) => Ok(image.adjust_contrast(value)),
+            Self::HueRotate(value) => Ok(image.huerotate(value)),
             Self::Invert => {
                 image.invert();
                 Ok(image)
