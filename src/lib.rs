@@ -1,5 +1,6 @@
 use std::{fs, io::Cursor};
 
+use cached::proc_macro::cached;
 use conv::ValueInto;
 use image::imageops::FilterType;
 pub use image::{
@@ -81,7 +82,7 @@ impl ImageInputType {
             Self::Color { r, g, b, size } => {
                 Ok(DynamicImage::ImageRgb8(fill_color([r, g, b], size)))
             }
-            Self::Filename(name) => load_image_from_file(&name),
+            Self::Filename(name) => load_image_from_file(name),
             Self::Bytes(bytes) => Ok(Reader::new(Cursor::new(bytes))
                 .with_guessed_format()?
                 .decode()?),
@@ -116,7 +117,7 @@ impl FontInput {
     pub fn get_font(self) -> Result<Font<'static>, Errors> {
         match self {
             Self::Font(font) => Ok(font),
-            Self::Filename(name) => load_font_from_file(&name),
+            Self::Filename(name) => load_font_from_file(name),
             Self::Bytes(bytes) => Font::try_from_vec(bytes).ok_or(Errors::InvalidFont),
         }
     }
@@ -354,15 +355,17 @@ pub fn load_file(name: &str) -> Result<Vec<u8>, Errors> {
     Ok(fs::read(name)?.to_vec())
 }
 
-pub fn load_image_from_file(name: &str) -> Result<DynamicImage, Errors> {
-    let v = load_file(name)?;
+#[cached(time = 120, size = 100, result = true, sync_writes = true)]
+pub fn load_image_from_file(name: String) -> Result<DynamicImage, Errors> {
+    let v = load_file(&name)?;
     let c = Cursor::new(v);
     let img = Reader::new(c).with_guessed_format()?.decode()?;
     Ok(img)
 }
 
-pub fn load_font_from_file(name: &str) -> Result<Font<'static>, Errors> {
-    Font::try_from_vec(fs::read(name)?.to_vec()).ok_or(Errors::InvalidFont)
+#[cached(time = 120, size = 100, result = true, sync_writes = true)]
+pub fn load_font_from_file(name: String) -> Result<Font<'static>, Errors> {
+    Font::try_from_vec(load_file(&name)?).ok_or(Errors::InvalidFont)
 }
 
 pub fn fill_color(color: [u8; 3], size: (u32, u32)) -> RgbImage {
