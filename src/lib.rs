@@ -188,6 +188,16 @@ pub enum ImageOperation {
         w: u32,
         filter: String,
     },
+    ResizeExact {
+        h: u32,
+        w: u32,
+        filter: String,
+    },
+    ResizeToFill {
+        h: u32,
+        w: u32,
+        filter: String,
+    },
     Crop {
         x: u32,
         y: u32,
@@ -243,18 +253,13 @@ pub enum ImageOperation {
 impl ImageOperation {
     fn apply(self, mut image: DynamicImage) -> Result<DynamicImage, Errors> {
         match self {
-            Self::Resize { h, w, filter } => Ok(image.resize(
-                w,
-                h,
-                match filter.as_str() {
-                    "Nearest" => Ok(FilterType::Nearest),
-                    "Triangle" => Ok(FilterType::Triangle),
-                    "CatmullRom" => Ok(FilterType::CatmullRom),
-                    "Gaussian" => Ok(FilterType::Gaussian),
-                    "Lanczos3" => Ok(FilterType::Lanczos3),
-                    _ => Err(Errors::InvalidResizeFilter),
-                }?,
-            )),
+            Self::Resize { h, w, filter } => Ok(image.resize(w, h, filter_from_str(filter)?)),
+            Self::ResizeExact { h, w, filter } => {
+                Ok(image.resize_exact(w, h, filter_from_str(filter)?))
+            }
+            Self::ResizeToFill { h, w, filter } => {
+                Ok(image.resize_to_fill(w, h, filter_from_str(filter)?))
+            }
             Self::Crop { x, y, w, h } => Ok(image.crop_imm(x, y, w, h)),
             Self::Overlay {
                 layer_image_input,
@@ -380,6 +385,17 @@ pub fn fill_color(color: [u8; 3], size: (u32, u32)) -> RgbImage {
         }
     }
     img
+}
+
+fn filter_from_str(filter: String) -> Result<FilterType, Errors> {
+    match filter.as_str() {
+        "Nearest" => Ok(FilterType::Nearest),
+        "Triangle" => Ok(FilterType::Triangle),
+        "CatmullRom" => Ok(FilterType::CatmullRom),
+        "Gaussian" => Ok(FilterType::Gaussian),
+        "Lanczos3" => Ok(FilterType::Lanczos3),
+        _ => Err(Errors::InvalidResizeFilter),
+    }
 }
 
 fn get_font_height(font: &Font, scale: Scale) -> f32 {
