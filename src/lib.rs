@@ -73,6 +73,8 @@ pub enum ImageInputType {
         w: u32,
         type_: String,
     },
+    #[cfg(feature = "base64")]
+    Base64(String),
 }
 
 macro_rules! new_image{
@@ -110,6 +112,8 @@ impl ImageInputType {
                 Rgb32FImage,
                 Rgba32FImage
             ),
+            #[cfg(feature = "base64")]
+            Self::Base64(encoded) => Ok(image::load_from_memory(&base64::decode(encoded)?)?),
         }
     }
 }
@@ -125,6 +129,8 @@ pub enum FontInput {
     Filename(String),
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Bytes(Vec<u8>),
+    #[cfg(feature = "base64")]
+    Base64(String),
 }
 
 impl FontInput {
@@ -133,6 +139,10 @@ impl FontInput {
             Self::Font(font) => Ok(font),
             Self::Filename(name) => load_font_from_file(&name),
             Self::Bytes(bytes) => Font::try_from_vec(bytes).ok_or(Errors::InvalidFont),
+            #[cfg(feature = "base64")]
+            Self::Base64(encoded) => {
+                Font::try_from_vec(base64::decode(encoded)?).ok_or(Errors::InvalidFont)
+            }
         }
     }
 }
