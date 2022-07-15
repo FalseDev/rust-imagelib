@@ -98,9 +98,7 @@ impl ImageInputType {
                 Ok(DynamicImage::ImageRgb8(fill_color([r, g, b], size)))
             }
             Self::Filename(name) => load_image_from_file(&name),
-            Self::Bytes(bytes) => Ok(Reader::new(Cursor::new(bytes))
-                .with_guessed_format()?
-                .decode()?),
+            Self::Bytes(bytes) => Ok(image::load_from_memory(&bytes)?),
             Self::New { h, w, type_ } => new_image!(
                 type_,
                 h,
