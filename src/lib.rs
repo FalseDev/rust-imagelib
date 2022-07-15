@@ -232,20 +232,13 @@ pub enum ImageOperation {
     Tile {
         tile_image: ImageInput,
     },
-    DrawWrappedText {
-        text: String,
-        color: [u8; 4],
-        font: FontInput,
-        scale: ScaleTuple,
-        mid: (i32, i32),
-        max_width: usize,
-    },
     DrawText {
         text: String,
         color: [u8; 4],
         font: FontInput,
         scale: ScaleTuple,
         mid: (i32, i32),
+        max_width: Option<usize>,
     },
     ColorBlend {
         r: u8,
@@ -304,41 +297,17 @@ impl ImageOperation {
                 image::imageops::tile(&mut image, &tile_image.get_image()?);
                 Ok(image)
             }
-            Self::DrawWrappedText {
-                text,
+            Self::DrawText {
+                mut text,
                 color,
                 font,
                 scale,
                 mid,
                 max_width,
             } => {
-                let color = Rgba(color);
-                let final_text: &String;
-                let tmp_text: String;
-
-                if !text.contains('\n') {
-                    tmp_text = textwrap::fill(&text, max_width);
-                    final_text = &tmp_text;
-                } else {
-                    final_text = &text;
+                if let Some(width) = max_width {
+                    text = textwrap::fill(&text, width);
                 }
-                draw_text(
-                    &mut image,
-                    color,
-                    &font.get_font()?,
-                    final_text,
-                    scale.to_scale(),
-                    &mid,
-                );
-                Ok(image)
-            }
-            Self::DrawText {
-                text,
-                color,
-                font,
-                scale,
-                mid,
-            } => {
                 let color = Rgba(color);
                 draw_text(
                     &mut image,
