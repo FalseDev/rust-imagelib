@@ -66,6 +66,7 @@ pub enum ImageInputType {
         size: (u32, u32),
     },
     Filename(String),
+    #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Bytes(Vec<u8>),
     New {
         h: u32,
@@ -122,6 +123,7 @@ pub enum FontInput {
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Font(Font<'static>),
     Filename(String),
+    #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Bytes(Vec<u8>),
 }
 
