@@ -19,7 +19,7 @@ pub use crate::errors::Errors;
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
-    serde(rename_all = "lowercase")
+    serde(rename_all = "snake_case")
 )]
 #[derive(Default)]
 pub enum ResizeMode {
@@ -32,7 +32,7 @@ pub enum ResizeMode {
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
-    serde(rename_all = "lowercase")
+    serde(rename_all = "snake_case")
 )]
 pub struct ImageInput {
     #[cfg_attr(feature = "serde", serde(flatten))]
@@ -54,7 +54,7 @@ impl ImageInput {
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
-    serde(rename_all = "lowercase")
+    serde(rename_all = "snake_case")
 )]
 pub enum ImageInputType {
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
@@ -119,7 +119,7 @@ impl ImageInputType {
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
-    serde(rename_all = "lowercase")
+    serde(rename_all = "snake_case")
 )]
 pub enum FontInput {
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
@@ -148,7 +148,7 @@ impl FontInput {
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
-    serde(rename_all = "lowercase")
+    serde(rename_all = "snake_case")
 )]
 pub struct ImageOperator {
     pub image_input: Option<ImageInput>,
@@ -188,7 +188,7 @@ impl ImageOperator {
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
-    serde(rename_all = "lowercase")
+    serde(rename_all = "snake_case")
 )]
 pub struct ScaleTuple(pub f32, pub f32);
 impl ScaleTuple {
@@ -203,7 +203,7 @@ impl ScaleTuple {
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize),
-    serde(rename_all = "lowercase")
+    serde(rename_all = "snake_case")
 )]
 pub enum ImageOperation {
     Thumbnail {
