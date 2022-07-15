@@ -14,7 +14,7 @@ use serde::Deserialize;
 pub mod build_info;
 pub mod errors;
 
-use crate::errors::Errors;
+pub use crate::errors::Errors;
 
 #[cfg_attr(
     feature = "serde",
