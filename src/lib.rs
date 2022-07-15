@@ -1,4 +1,4 @@
-use std::{fs, io::Cursor};
+use std::{default::Default, fs, io::Cursor};
 
 use conv::ValueInto;
 use image::imageops::FilterType;
@@ -15,6 +15,19 @@ pub mod build_info;
 pub mod errors;
 
 pub use crate::errors::Errors;
+
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize),
+    serde(rename_all = "lowercase")
+)]
+#[derive(Default)]
+pub enum ResizeMode {
+    #[default]
+    Fit,
+    Exact,
+    Fill,
+}
 
 #[cfg_attr(
     feature = "serde",
@@ -195,16 +208,8 @@ pub enum ImageOperation {
         h: u32,
         w: u32,
         filter: String,
-    },
-    ResizeExact {
-        h: u32,
-        w: u32,
-        filter: String,
-    },
-    ResizeToFill {
-        h: u32,
-        w: u32,
-        filter: String,
+        #[cfg_attr(feature = "serde", serde(default))]
+        mode: ResizeMode,
     },
     Crop {
         x: u32,
@@ -263,12 +268,13 @@ impl ImageOperation {
         match self {
             Self::Thumbnail { h, w } => Ok(image.thumbnail(w, h)),
             Self::ThumbnailExact { h, w } => Ok(image.thumbnail_exact(w, h)),
-            Self::Resize { h, w, filter } => Ok(image.resize(w, h, filter_from_str(filter)?)),
-            Self::ResizeExact { h, w, filter } => {
-                Ok(image.resize_exact(w, h, filter_from_str(filter)?))
-            }
-            Self::ResizeToFill { h, w, filter } => {
-                Ok(image.resize_to_fill(w, h, filter_from_str(filter)?))
+            Self::Resize { h, w, filter, mode } => {
+                let func = match mode {
+                    ResizeMode::Fit => DynamicImage::resize,
+                    ResizeMode::Exact => DynamicImage::resize_exact,
+                    ResizeMode::Fill => DynamicImage::resize_to_fill,
+                };
+                Ok(func(&image, w, h, filter_from_str(filter)?))
             }
             Self::Crop { x, y, w, h } => Ok(image.crop_imm(x, y, w, h)),
             Self::Overlay {
