@@ -199,10 +199,8 @@ pub enum ImageOperation {
     Thumbnail {
         w: u32,
         h: u32,
-    },
-    ThumbnailExact {
-        w: u32,
-        h: u32,
+        #[cfg_attr(feature = "serde", serde(default))]
+        exact: bool,
     },
     Resize {
         h: u32,
@@ -266,8 +264,11 @@ pub enum ImageOperation {
 impl ImageOperation {
     fn apply(self, mut image: DynamicImage) -> Result<DynamicImage, Errors> {
         match self {
-            Self::Thumbnail { h, w } => Ok(image.thumbnail(w, h)),
-            Self::ThumbnailExact { h, w } => Ok(image.thumbnail_exact(w, h)),
+            Self::Thumbnail { h, w, exact } => Ok(if exact {
+                image.thumbnail_exact(w, h)
+            } else {
+                image.thumbnail(w, h)
+            }),
             Self::Resize { h, w, filter, mode } => {
                 let func = match mode {
                     ResizeMode::Fit => DynamicImage::resize,
