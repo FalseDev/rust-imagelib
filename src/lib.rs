@@ -65,6 +65,7 @@ pub enum ImageInputType {
         b: u8,
         size: (u32, u32),
     },
+    #[cfg_attr(all(feature = "serde", not(feature = "serde_file")), serde(skip))]
     Filename(String),
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Bytes(Vec<u8>),
@@ -124,6 +125,7 @@ impl ImageInputType {
 pub enum FontInput {
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Font(Font<'static>),
+    #[cfg_attr(all(feature = "serde", not(feature = "serde_file")), serde(skip))]
     Filename(String),
     #[cfg_attr(feature = "serde", serde(skip_deserializing))]
     Bytes(Vec<u8>),

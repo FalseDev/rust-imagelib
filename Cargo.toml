@@ -10,6 +10,7 @@ build = "build.rs"
 default = []
 serde = ["dep:serde"]
 base64 = ["dep:base64"]
+serde_file = ["serde"]
 
 
 [build-dependencies.built]
