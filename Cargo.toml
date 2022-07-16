@@ -10,6 +10,7 @@ build = "build.rs"
 default = []
 serde = ["dep:serde"]
 base64 = ["dep:base64"]
+reqwest = ["dep:reqwest"]
 serde_file = ["serde"]
 
 
@@ -36,4 +37,9 @@ optional = true
 
 [dependencies.base64]
 version = "0.13.0"
+optional = true
+
+[dependencies.reqwest]
+version = "0.11"
+features = ["blocking"]
 optional = true

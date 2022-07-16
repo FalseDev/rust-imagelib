@@ -76,6 +76,8 @@ pub enum ImageInputType {
     },
     #[cfg(feature = "base64")]
     Base64(String),
+    #[cfg(feature = "reqwest")]
+    Url(String),
 }
 
 macro_rules! new_image{
@@ -113,6 +115,10 @@ impl ImageInputType {
             ),
             #[cfg(feature = "base64")]
             Self::Base64(encoded) => Ok(image::load_from_memory(&base64::decode(encoded)?)?),
+            #[cfg(feature = "reqwest")]
+            Self::Url(url) => Ok(image::load_from_memory(
+                &reqwest::blocking::get(url)?.bytes()?,
+            )?),
         }
     }
 }
@@ -131,6 +137,8 @@ pub enum FontInput {
     Bytes(Vec<u8>),
     #[cfg(feature = "base64")]
     Base64(String),
+    #[cfg(feature = "reqwest")]
+    Url(String),
 }
 
 impl FontInput {
@@ -143,6 +151,9 @@ impl FontInput {
             Self::Base64(encoded) => {
                 Font::try_from_vec(base64::decode(encoded)?).ok_or(Errors::InvalidFont)
             }
+            #[cfg(feature = "reqwest")]
+            Self::Url(url) => Font::try_from_vec(reqwest::blocking::get(url)?.bytes()?.to_vec())
+                .ok_or(Errors::InvalidFont),
         }
     }
 }
